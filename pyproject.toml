@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "colusa-cli"
+version = "0.1.0"
+description = "Extract main article content from a URL and output Markdown"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+
+dependencies = [
+    "beautifulsoup4>=4.9",
+    "requests>=2.32",
+    "python-dateutil>=2.9",
+    "chardet>=5.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov"]
+doh = ["dnspython>=2.2"]
+browser = ["playwright>=1.40"]
+
+[project.scripts]
+colusa-cli = "colusa_cli.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["colusa_cli*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

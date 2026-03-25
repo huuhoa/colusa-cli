@@ -1,0 +1,63 @@
+# colusa-cli
+
+A CLI tool that takes a URL, downloads the page, extracts the main article content, and outputs it as Markdown — optimized for AI agent consumption.
+
+## Goal
+
+```
+colusa-cli <url> → markdown on stdout
+```
+
+AI agents can pipe this output directly into their context without dealing with HTML noise, navigation, ads, or boilerplate.
+
+## Design
+
+Built by extracting the core pipeline from [colusa](https://github.com/huuhoa/colusa):
+
+1. **Download** — Fetch URL with caching; respects encoding
+2. **Extract** — Isolate main article body from surrounding page noise
+3. **Convert** — Walk the HTML tree and emit clean Markdown
+
+Unlike colusa (which targets ebook generation via AsciiDoc), this tool:
+- Outputs **Markdown** (not AsciiDoc)
+- Is single-URL focused (no book/multi-chapter config)
+- Writes to **stdout** (pipe-friendly)
+- Has no external tool dependencies (asciidoctor not required)
+
+## Core Extraction Logic (from colusa)
+
+Content discovery priority:
+1. `hentry` microformat class
+2. Common CMS classes: `postcontent`, `entry-content`, `article-content`, `blog-content`
+3. `<article>` or `<main>` HTML5 semantic tags
+4. Site-specific CSS selector rules (configurable)
+
+Metadata extracted:
+- **Title**: OpenGraph `og:title` → `<title>`
+- **Author**: `<meta name="author">` or Yoast JSON-LD
+- **Published**: `<meta property="article:published_time">` or Yoast JSON-LD
+
+## Markdown Conversion Mapping
+
+| HTML | Markdown |
+|------|----------|
+| `<h1>`–`<h6>` | `#`–`######` |
+| `<p>` | paragraph + blank line |
+| `<strong>`, `<b>` | `**bold**` |
+| `<em>`, `<i>` | `*italic*` |
+| `<a href="">` | `[text](url)` |
+| `<img>` | `![alt](url)` |
+| `<code>` inline | `` `code` `` |
+| `<pre><code>` | fenced code block with language |
+| `<ul>`, `<ol>` | `- item` / `1. item` |
+| `<blockquote>` | `> quote` |
+| `<table>` | GFM table |
+| `<hr>` | `---` |
+
+## Dependencies (from colusa)
+
+- `beautifulsoup4` — HTML parsing
+- `requests` — HTTP download
+- `python-dateutil` — date parsing
+- `chardet` — encoding detection
+- `PyYAML` — optional site-rules config
