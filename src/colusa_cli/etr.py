@@ -14,6 +14,7 @@ class SiteRule:
     author: str = ''
     published: str = ''
     cleanup: list[str] = field(default_factory=list)
+    browser: bool = False
 
 
 class ContentNotFoundError(Exception):

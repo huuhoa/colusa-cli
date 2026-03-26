@@ -1,4 +1,5 @@
 import argparse
+import os
 import pathlib
 import re
 import sys
@@ -6,6 +7,7 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 
+from .config import ConfigError, load_config, match_site_rule
 from .etr import ContentNotFoundError, DynamicExtractor, Extractor, SiteRule
 from .fetch import Downloader
 from .markdown_visitor import MarkdownVisitor
@@ -39,6 +41,11 @@ def main() -> None:
         help='Skip disk cache and always re-fetch',
     )
     parser.add_argument(
+        '--ssl-cert',
+        metavar='FILE',
+        help='Path to CA bundle for SSL verification',
+    )
+    parser.add_argument(
         '--doh',
         nargs='?',
         const='cloudflare',
@@ -53,13 +60,35 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.doh:
-        from . import doh
-        doh.enable(args.doh)
+    # Load config
+    try:
+        config = load_config()
+    except ConfigError as exc:
+        print(f'[ERROR] {exc}', file=sys.stderr)
+        raise SystemExit(1)
+
+    # Resolve scalar settings: CLI flag > config > env var > system default
+    ssl_cert: str | None = (
+        args.ssl_cert
+        or config.ssl_cert
+        or os.environ.get('SSL_CERT_FILE')
+    )
+    cache_dir: pathlib.Path | None = args.cache_dir or config.cache_dir
+    doh: str | None = args.doh or config.doh
+    use_browser: bool = args.browser or config.browser
+
+    # Match site rule from config
+    site_rule: SiteRule | None = match_site_rule(args.url, config.sites)
+    if site_rule is not None and site_rule.browser:
+        use_browser = True
+
+    if doh:
+        from . import doh as doh_mod
+        doh_mod.enable(doh)
 
     # Fetch
     html: str | None = None
-    if args.browser:
+    if use_browser:
         from . import browser as browser_mod
         try:
             html = browser_mod.fetch(args.url)
@@ -70,7 +99,7 @@ def main() -> None:
             raise SystemExit(1)
     else:
         try:
-            downloader = Downloader(cache_dir=args.cache_dir)
+            downloader = Downloader(cache_dir=cache_dir, ssl_cert=ssl_cert)
             html = downloader.fetch(args.url, no_cache=args.no_cache)
         except requests.exceptions.HTTPError as exc:
             if exc.response is not None and exc.response.status_code in (403, 429):
@@ -97,10 +126,12 @@ def main() -> None:
     # Parse
     bs = BeautifulSoup(html, 'html.parser')
 
-    # Extract
+    # Extract: CLI --selector overrides config rule's content; config rule fills the rest
     if args.selector:
         rule = SiteRule(content=args.selector)
         extractor: Extractor = DynamicExtractor(bs, rule)
+    elif site_rule is not None:
+        extractor = DynamicExtractor(bs, site_rule)
     else:
         extractor = Extractor(bs)
 

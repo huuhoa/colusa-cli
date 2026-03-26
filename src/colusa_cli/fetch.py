@@ -18,9 +18,10 @@ class Downloader:
     )
     DefaultCacheDir: pathlib.Path = pathlib.Path.home() / '.cache' / 'colusa-cli'
 
-    def __init__(self, cache_dir: Optional[pathlib.Path] = None) -> None:
+    def __init__(self, cache_dir: Optional[pathlib.Path] = None, ssl_cert: Optional[str] = None) -> None:
         self.cache_dir = cache_dir or self.DefaultCacheDir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.ssl_cert = ssl_cert
 
     def _cache_path(self, url: str) -> pathlib.Path:
         digest = hashlib.sha256(url.encode()).hexdigest()
@@ -42,7 +43,7 @@ class Downloader:
             'Accept': '*/*',
             'User-Agent': self.UserAgent,
         }
-        verify: str | bool = ssl.get_default_verify_paths().cafile or True
+        verify: str | bool = self.ssl_cert or ssl.get_default_verify_paths().cafile or True
         resp = requests.get(url, headers=headers, timeout=30, verify=verify)
         resp.raise_for_status()
         raw = resp.content
