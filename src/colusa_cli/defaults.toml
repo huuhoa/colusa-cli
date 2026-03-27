@@ -1,0 +1,191 @@
+# colusa-cli default site rules (TOML format — https://toml.io)
+# These rules are bundled with the package and loaded as the lowest-priority layer.
+# Override any rule by adding a matching pattern to ~/.colusa or .colusa.
+
+[sites."github.com"]
+content = ".markdown-body"
+cleanup = [".js-file-line-container", ".highlight-toolbar"]
+
+[sites."gist.github.com"]
+content = ".markdown-body"
+
+[sites."medium.com"]
+content = "article"
+cleanup = [".metabar", "nav"]
+
+[sites."*.medium.com"]
+content = "article"
+
+[sites."substack.com"]
+content = ".body.markup"
+cleanup = [".subscribe-widget", ".share-dialog", ".post-footer", ".subscribe-footer", ".publication-footer", "a.post-ufi-button", ".tweet-header", "h1.post-title", ".post-label"]
+
+[sites."*.substack.com"]
+content = ".body.markup"
+cleanup = [".subscribe-widget", ".share-dialog", ".post-footer", ".subscribe-footer", ".publication-footer", "a.post-ufi-button", ".tweet-header", "h1.post-title", ".post-label"]
+
+[sites."newsletter.pragmaticengineer.com"]
+content = ".body.markup"
+cleanup = [".subscribe-widget", ".share-dialog", ".post-footer", ".subscribe-footer", ".publication-footer", "a.post-ufi-button", ".tweet-header", "h1.post-title", ".post-label"]
+
+[sites."dev.to"]
+content = "#article-body"
+cleanup = [".article-actions"]
+
+[sites."hashnode.com"]
+content = ".prose"
+
+[sites."*.hashnode.dev"]
+content = ".prose"
+
+[sites."stackoverflow.com"]
+content = "#answer-header, .js-post-body"
+
+[sites."news.ycombinator.com"]
+content = ".comment-tree"
+
+[sites."lobste.rs"]
+content = ".story_text"
+
+[sites."reddit.com"]
+content = "[data-test-id='post-content']"
+
+[sites."www.reddit.com"]
+content = "[data-test-id='post-content']"
+
+[sites."wikipedia.org"]
+content = "#mw-content-text"
+cleanup = [".infobox", ".navbox", ".vertical-navbox", ".reflist", "#toc"]
+
+[sites."en.wikipedia.org"]
+content = "#mw-content-text"
+cleanup = [".infobox", ".navbox", ".vertical-navbox", ".reflist", "#toc"]
+
+[sites."docs.python.org"]
+content = "article[role='main'], div.body"
+
+[sites."docs.rust-lang.org"]
+content = ".content main"
+
+[sites."doc.rust-lang.org"]
+content = "main"
+
+[sites."go.dev"]
+content = "article.Doc"
+
+[sites."pkg.go.dev"]
+content = ".Documentation"
+
+[sites."developer.mozilla.org"]
+content = "article.main-page-content"
+cleanup = [".prev-next", ".on-github"]
+
+[sites."docs.djangoproject.com"]
+content = "article"
+
+[sites."flask.palletsprojects.com"]
+content = "article"
+
+[sites."fastapi.tiangolo.com"]
+content = "article"
+
+[sites."docs.aws.amazon.com"]
+content = "#main-col-body"
+cleanup = [".prev-next", "#feedback"]
+
+[sites."cloud.google.com"]
+content = "article.devsite-article"
+cleanup = [".devsite-article-meta", ".devsite-feedback"]
+
+[sites."learn.microsoft.com"]
+content = "#main"
+cleanup = [".feedback-section", ".page-actions"]
+
+[sites."realpython.com"]
+content = ".article-body"
+cleanup = [".article-sidebar"]
+
+[sites."towardsdatascience.com"]
+content = "article"
+
+[sites."css-tricks.com"]
+content = ".article-content"
+cleanup = [".ad-unit"]
+
+[sites."smashingmagazine.com"]
+content = ".article__content"
+
+[sites."www.smashingmagazine.com"]
+content = ".article__content"
+
+[sites."blog.cloudflare.com"]
+content = ".post-content"
+
+[sites."engineering.atspotify.com"]
+content = ".post-content"
+cleanup = [".share-block"]
+
+[sites."netflixtechblog.com"]
+content = "article"
+
+[sites."martinfowler.com"]
+content = "article, #content"
+
+[sites."www.paulgraham.com"]
+content = "font"
+
+[sites."paulgraham.com"]
+content = "font"
+
+[sites."joel.spolsky.com"]
+content = ".blog-post"
+
+[sites."arxiv.org"]
+content = "#abs-abstract"
+
+[sites."archive.md"]
+content = "[js-target='article-content']"
+
+[sites."eugeneyan.com"]
+content = ".notebody"
+
+[sites."increment.com"]
+content = "article[itemprop='articleBody']"
+
+[sites."www.infoq.com"]
+content = ".article__content"
+cleanup = [".contentRatingWidget", ".nocontent"]
+
+[sites."lethain.com"]
+content = ""
+cleanup = ["header"]
+
+[sites."www.newsweek.com"]
+content = "main article article"
+
+[sites."www.royalroad.com"]
+content = ".chapter-content"
+
+[sites."seths.blog"]
+content = ".single-post"
+cleanup = [".post-footer"]
+
+[sites."slack.engineering"]
+content = "#primary.main-content"
+
+[sites."staffeng.com"]
+content = ".blog-post-content"
+
+[sites."stratechery.com"]
+content = "main"
+cleanup = [".sharedaddy", "nav", ".post-navigation-link-previous", ".post-navigation-link-next", ".stratechery-sidebar"]
+
+[sites."*.techtarget.com"]
+content = "section#content-body"
+
+[sites."xp123.com"]
+content = "article.post"
+cleanup = ["header.entry-header", ".yikes-mailchimp-container", "footer.entry-meta"]
+
+[sites."softwareengineeringdaily.com"]
+content = "main"

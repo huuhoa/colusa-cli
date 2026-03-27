@@ -1,6 +1,7 @@
 import fnmatch
 import tomllib
 from dataclasses import dataclass, field
+from importlib.resources import files
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -13,7 +14,8 @@ class Config:
     cache_dir: Path | None = None
     doh: str | None = None
     browser: bool = False
-    sites: list[tuple[str, SiteRule]] = field(default_factory=list)
+    # Each entry: (pattern, rule, source) where source is "[default]", "[~/.colusa]", or "[.colusa]"
+    sites: list[tuple[str, SiteRule, str]] = field(default_factory=list)
 
 
 class ConfigError(Exception):
@@ -31,8 +33,14 @@ def _load_file(path: Path) -> dict:
         raise ConfigError(f'Invalid TOML in {path}: {exc}') from exc
 
 
-def _parse_site_rules(raw: dict) -> list[tuple[str, SiteRule]]:
-    """Extract [sites.*] tables into (pattern, SiteRule) tuples."""
+def _load_defaults() -> dict:
+    """Read the bundled defaults.toml from package data."""
+    data = files('colusa_cli').joinpath('defaults.toml').read_bytes()
+    return tomllib.loads(data.decode())
+
+
+def _parse_site_rules(raw: dict, source: str) -> list[tuple[str, SiteRule, str]]:
+    """Extract [sites.*] tables into (pattern, SiteRule, source) tuples."""
     sites_raw = raw.get('sites', {})
     rules = []
     for pattern, table in sites_raw.items():
@@ -44,19 +52,23 @@ def _parse_site_rules(raw: dict) -> list[tuple[str, SiteRule]]:
             cleanup=table.get('cleanup', []),
             browser=table.get('browser', False),
         )
-        rules.append((pattern, rule))
+        rules.append((pattern, rule, source))
     return rules
 
 
 def load_config(
     project_path: Path = Path('.colusa'),
     home_path: Path = Path.home() / '.colusa',
+    _defaults_raw: dict | None = None,
 ) -> Config:
-    """Load and merge ~/.colusa and .colusa into a Config. Project values override home values."""
+    """Load and merge bundled defaults, ~/.colusa, and .colusa into a Config.
+    Project values override home values; both override bundled defaults.
+    _defaults_raw is for testing only — pass {} to suppress bundled defaults."""
+    defaults_raw = _load_defaults() if _defaults_raw is None else _defaults_raw
     home_raw = _load_file(home_path)
     project_raw = _load_file(project_path)
 
-    # Scalar merge: project overrides home
+    # Scalar merge: project overrides home (defaults supply no scalars)
     def _pick(key: str):
         if key in project_raw:
             return project_raw[key]
@@ -69,10 +81,11 @@ def load_config(
     cache_dir_raw = _pick('cache_dir')
     cache_dir = Path(cache_dir_raw).expanduser() if cache_dir_raw else None
 
-    # Site rules: project first (higher priority in specificity sort)
-    project_rules = _parse_site_rules(project_raw)
-    home_rules = _parse_site_rules(home_raw)
-    sites = project_rules + home_rules
+    # Site rules: project first, then home, then defaults (lowest priority)
+    project_rules = _parse_site_rules(project_raw, '[.colusa]')
+    home_rules = _parse_site_rules(home_raw, '[~/.colusa]')
+    default_rules = _parse_site_rules(defaults_raw, '[default]')
+    sites = project_rules + home_rules + default_rules
 
     return Config(
         ssl_cert=ssl_cert,
@@ -88,11 +101,11 @@ def _wildcard_count(pattern: str) -> int:
     return pattern.count('*') + pattern.count('?')
 
 
-def match_site_rule(url: str, sites: list[tuple[str, SiteRule]]) -> SiteRule | None:
+def match_site_rule(url: str, sites: list[tuple[str, SiteRule, str]]) -> SiteRule | None:
     """Match URL hostname against configured glob patterns. Returns best (most specific) match."""
     hostname = urlparse(url).hostname or ''
     sorted_sites = sorted(sites, key=lambda item: _wildcard_count(item[0]))
-    for pattern, rule in sorted_sites:
+    for pattern, rule, _source in sorted_sites:
         if fnmatch.fnmatch(hostname, pattern):
             return rule
     return None

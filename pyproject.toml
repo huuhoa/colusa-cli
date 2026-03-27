@@ -32,5 +32,8 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["colusa_cli*"]
 
+[tool.setuptools.package-data]
+colusa_cli = ["*.toml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -19,11 +19,26 @@ def _yaml_str(value: str) -> str:
     return f'"{escaped}"'
 
 
+def _print_rules(sites: list) -> None:
+    """Print active site rules as a table: PATTERN, CONTENT, SOURCE."""
+    from .etr import SiteRule
+    if not sites:
+        print('No site rules configured.')
+        return
+    col_pat = max(len('PATTERN'), max(len(p) for p, _, _ in sites))
+    col_con = max(len('CONTENT'), max(len(r.content) for _, r, _ in sites))
+    fmt = f'{{:<{col_pat}}}  {{:<{col_con}}}  {{}}'
+    print(fmt.format('PATTERN', 'CONTENT', 'SOURCE'))
+    print(fmt.format('-' * col_pat, '-' * col_con, '--------'))
+    for pattern, rule, source in sites:
+        print(fmt.format(pattern, rule.content, source))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description='Fetch a URL and output the main article content as Markdown.',
     )
-    parser.add_argument('url', help='URL to fetch and convert')
+    parser.add_argument('url', nargs='?', help='URL to fetch and convert')
     parser.add_argument(
         '--selector', '-s',
         metavar='CSS',
@@ -58,6 +73,11 @@ def main() -> None:
         action='store_true',
         help='Fetch using a headless Chromium browser (bypasses bot detection).',
     )
+    parser.add_argument(
+        '--list-rules',
+        action='store_true',
+        help='Print all active site rules (defaults + ~/.colusa + .colusa) and exit.',
+    )
     args = parser.parse_args()
 
     # Load config
@@ -66,6 +86,13 @@ def main() -> None:
     except ConfigError as exc:
         print(f'[ERROR] {exc}', file=sys.stderr)
         raise SystemExit(1)
+
+    if args.list_rules:
+        _print_rules(config.sites)
+        raise SystemExit(0)
+
+    if not args.url:
+        parser.error('url is required (unless --list-rules is specified)')
 
     # Resolve scalar settings: CLI flag > config > env var > system default
     ssl_cert: str | None = (
